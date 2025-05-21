@@ -11,27 +11,42 @@ Ce document fournit un guide complet pour déployer une infrastructure 5G MEC (M
 
 ### 1.1.1 Déploiement du Réseau Central OAI 5G
 
-Nous utilisons la branche **develop** du projet **OAI-CN**. Le code est accessible sur [GitLab OAI-CN](https://gitlab.eurecom.fr/oai/cn5g/oai-cn5g-fed).
+Ce guide explique le déploiement de la version `develop` du cœur de réseau OAI 5G, en utilisant notamment le composant `oai-spgwu-UPF`.
+
+Le projet **OAI-CN** (Core Network) est disponible sur le GitLab officiel : [https://gitlab.eurecom.fr/oai/cn5g/oai-cn5g-fed](https://gitlab.eurecom.fr/oai/cn5g/oai-cn5g-fed)
 
 #### Étapes de déploiement :
 
-1. Activer le transfert IP sur la machine hôte :
+1. **Récupération des images Docker** :
+   OAI fournit des images Docker pré-construites pour chaque composant (AMF, SMF, UPF, etc.). Après extraction, chaque image doit être référencée dans le fichier `docker-compose.yaml`.
 
-```bash
-sudo sysctl net.ipv4.conf.all.forwarding=1
-sudo iptables -P FORWARD ACCEPT
-```
+2. **Modification du fichier `docker-compose.yaml`** :
+   Configurez ce fichier pour garantir une communication stable entre tous les composants du réseau.
 
-2. Ajouter les informations SIM UE au fichier SQL : `oai_db.sql`.
+3. **Activer le transfert IP** :
+   Par défaut, le trafic des conteneurs Docker n'est pas redirigé vers l'extérieur. Activez le transfert IP avec les commandes suivantes :
+   ```bash
+   sudo sysctl net.ipv4.conf.all.forwarding=1
+   sudo iptables -P FORWARD ACCEPT
+   ```
 
-3. Lancer le réseau central avec :
+4. **Configurer les abonnés (SIM)** :
+   Ajoutez les détails d'identification de l'UE OAI dans le fichier `oai_db.sql2`, qui contient les paramètres SIM tels que l'IMSI, la clé, l’opérateur, etc.
 
-```bash
-python3 core-network.py --type start-basic
-```
+5. **Lancement du cœur de réseau** :
+   Utilisez le script Python fourni pour simplifier le démarrage du réseau :
+   ```bash
+   python3 core-network.py --type start-basic
+   ```
 
-Cela encapsule `docker-compose` et simplifie le déploiement. Pensez à configurer les images et le `docker-compose.yaml` selon vos besoins.
+   Ce script agit comme une surcouche de `docker-compose` et `docker` afin de faciliter le déploiement.
 
+---
+
+> **Remarques** :
+> - Assurez-vous d'avoir `docker`, `docker-compose` et `python3` installés sur votre machine.
+> - Si nécessaire, autorisez les ports requis par les composants (AMF, SMF, UPF, etc.) via votre pare-feu.
+> - Il est recommandé d’utiliser une machine avec un noyau Linux récent et le support des namespaces réseau pour une compatibilité optimale.
 ---
 
 ### 1.1.2 Déploiement du Gestionnaire de Configuration OAI (OAI-CM)
