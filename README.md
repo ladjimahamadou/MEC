@@ -1,85 +1,86 @@
 # MEC
 This repository provides a step-by-step guide for implementing OAI-MEC in a 5G network.
 
-# 📡 Déploiement du 5G-MEC avec OpenAirInterface (OAI)
+# 📡 Deployment of 5G-MEC with OpenAirInterface (OAI)
 
-Ce document fournit un guide complet pour déployer une infrastructure 5G MEC (Multi-access Edge Computing) basée sur les composants OpenAirInterface (OAI), incluant le réseau central (Core), le RAN, le gestionnaire de configuration (OAI-CM), la plateforme MEC (OAI-MEP) et le service RNIS.
+This document provides a comprehensive guide for deploying a 5G MEC (Multi-access Edge Computing) infrastructure based on OpenAirInterface (OAI) components, including the Core Network, RAN, Configuration Manager (OAI-CM), MEC Platform (OAI-MEP), and the RNIS service.
 
 ---
 
-## 1.1 Déploiement des composants Core et RAN
+## 1.1 Deployment of Core and RAN Components
 
-### 1.1.1 Déploiement du Réseau Central OAI 5G
+### 1.1.1 Deployment of OAI 5G Core Network
 
-Ce guide explique le déploiement de la version `develop` du cœur de réseau OAI 5G, en utilisant notamment le composant `oai-spgwu-UPF`.
+This guide explains the deployment of the `develop` version of the OAI 5G Core Network, notably using the `oai-spgwu-UPF` component.
 
-Le projet **OAI-CN** (Core Network) est disponible sur le GitLab officiel : [https://gitlab.eurecom.fr/oai/cn5g/oai-cn5g-fed](https://gitlab.eurecom.fr/oai/cn5g/oai-cn5g-fed)
+The **OAI-CN** (Core Network) project is available on the official GitLab: [https://gitlab.eurecom.fr/oai/cn5g/oai-cn5g-fed](https://gitlab.eurecom.fr/oai/cn5g/oai-cn5g-fed)
 
-#### Étapes de déploiement :
+#### Deployment Steps:
 
-1. **Récupération des images Docker** :
-   OAI fournit des images Docker pré-construites pour chaque composant (AMF, SMF, UPF, etc.). Après extraction, chaque image doit être référencée dans le fichier `docker-compose.yaml`.
+1. **Pull Docker Images**:  
+   OAI provides pre-built Docker images for each component (AMF, SMF, UPF, etc.). After extraction, each image must be referenced in the `docker-compose.yaml` file.
 
-2. **Modification du fichier `docker-compose.yaml`** :
-   Configurez ce fichier pour garantir une communication stable entre tous les composants du réseau.
+2. **Edit the `docker-compose.yaml` File**:  
+   Configure this file to ensure stable communication between all network components.
 
-3. **Activer le transfert IP** :
-   Par défaut, le trafic des conteneurs Docker n'est pas redirigé vers l'extérieur. Activez le transfert IP avec les commandes suivantes :
+3. **Enable IP Forwarding**:  
+   By default, Docker container traffic is not routed to the outside. Enable IP forwarding using the following commands:
    ```bash
    sudo sysctl net.ipv4.conf.all.forwarding=1
    sudo iptables -P FORWARD ACCEPT
    ```
 
-4. **Configurer les abonnés (SIM)** :
-   Ajoutez les détails d'identification de l'UE OAI dans le fichier `oai_db.sql2`, qui contient les paramètres SIM tels que l'IMSI, la clé, l’opérateur, etc.
+4. **Configure Subscribers (SIM)**:  
+   Add OAI UE identification details in the `oai_db.sql2` file, which contains SIM parameters such as IMSI, key, operator, etc.
 
-5. **Lancement du cœur de réseau** :
-   Utilisez le script Python fourni pour simplifier le démarrage du réseau :
+5. **Start the Core Network**:  
+   Use the provided Python script to simplify the network startup:
    ```bash
    python3 core-network.py --type start-basic
    ```
 
-   Ce script agit comme une surcouche de `docker-compose` et `docker` afin de faciliter le déploiement.
+   This script acts as a wrapper around `docker-compose` and `docker` to streamline the deployment process.
 
 ---
 
-> **Remarques** :
-> - Assurez-vous d'avoir `docker`, `docker-compose` et `python3` installés sur votre machine.
-> - Si nécessaire, autorisez les ports requis par les composants (AMF, SMF, UPF, etc.) via votre pare-feu.
-> - Il est recommandé d’utiliser une machine avec un noyau Linux récent et le support des namespaces réseau pour une compatibilité optimale.
+> **Notes**:
+> - Make sure `docker`, `docker-compose`, and `python3` are installed on your machine.
+> - If necessary, allow the required ports for the components (AMF, SMF, UPF, etc.) through your firewall.
+> - It is recommended to use a machine with a recent Linux kernel and network namespace support for optimal compatibility.
+
 ---
 
-## 1.1.2 Déploiement du Gestionnaire de Configuration OAI (OAI-CM)
+## 1.1.2 Deployment of the OAI Configuration Manager (OAI-CM)
 
-Le Gestionnaire de Configuration OAI (OAI-CM) joue un rôle essentiel dans l'architecture 5G-MEC avec OpenAirInterface. Il permet de souscrire aux événements générés par les fonctions du réseau central, en particulier l'AMF (Access and Mobility Function) et le SMF (Session Management Function), et d’exposer ces événements à d’autres composants du système MEC.
+The OpenAirInterface Configuration Manager (OAI-CM) plays a critical role in the 5G-MEC architecture with OpenAirInterface. It enables the subscription to events generated by core network functions, particularly the AMF (Access and Mobility Function) and the SMF (Session Management Function), and exposes these events to other components of the MEC system.
 
-### Fonctionnalités principales :
-- **Souscription aux notifications d'événements AMF** via le point de terminaison :
+### Key Features:
+- **Subscription to AMF event notifications** via the endpoint:
   ```
   /subscribe/notification/amf
   ```
-- **Souscription aux notifications d'événements SMF** via le point de terminaison :
+- **Subscription to SMF event notifications** via the endpoint:
   ```
   /subscribe/notification/smf
   ```
 
-Ces endpoints northbound permettent à des composants tiers (comme le RNIS, un orchestrateur MEC ou des xApps) de recevoir des événements temps réel liés aux états de l’UE, aux sessions PDU, ou autres événements de signalisation pertinents.
+These northbound endpoints allow third-party components (such as RNIS, a MEC orchestrator, or xApps) to receive real-time events related to UE states, PDU sessions, or other relevant signaling events.
 
-> ⚠️ À ce jour, le dépôt OAI-CM est au stade initial de développement et prend uniquement en charge les abonnements aux événements provenant de l’AMF et du SMF d’OAI.
+> ⚠️ As of today, the OAI-CM repository is in its early development stage and only supports subscriptions to events from the OAI AMF and SMF.
 
-### Références :
-- Code source et informations détaillées disponibles sur le GitLab OAI : [https://gitlab.eurecom.fr/oai](https://gitlab.eurecom.fr/oai) (voir référentiel `oai-cn5g-smf` ou `oai-cn5g-amf`, selon les mises à jour récentes).
+### References:
+- Source code and detailed information are available on the OAI GitLab: [https://gitlab.eurecom.fr/oai](https://gitlab.eurecom.fr/oai) (see the `oai-cn5g-smf` or `oai-cn5g-amf` repositories, depending on recent updates).
 
-## 1.1.3 Déploiement des Composants RAN
+## 1.1.3 Deployment of RAN Components
 
-Ce guide décrit le processus de déploiement des composants **RAN** d’OpenAirInterface (OAI), en particulier l’intégration avec **oai-mep** sur **n'importe quelle branche de `oai-gnb`**. Le projet source est disponible ici :  
+This guide outlines the process for deploying **RAN** components of OpenAirInterface (OAI), specifically the integration with **oai-mep** on **any branch of `oai-gnb`**. The source project is available here:  
 👉 [OAI RAN GitLab](https://gitlab.eurecom.fr/oai/openairinterface5g)
 
 ---
 
-### 📦 Clonage du projet OAI-RAN
+### 📦 Cloning the OAI-RAN Project
 
-Commencez par cloner le dépôt :
+Start by cloning the repository:
 
 ```bash
 git clone https://gitlab.eurecom.fr/oai/openairinterface5g gnbs
@@ -88,55 +89,55 @@ cd gnbs
 
 ---
 
-### ⚙️ Compilation avec `flexric` et support USRP
+### ⚙️ Compilation with `flexric` and USRP Support
 
-Rendez-vous dans le répertoire de compilation et exécutez :
+Navigate to the build directory and execute:
 
 ```bash
 cd cmake_targets/
 ./build_oai -I -w USRP --gNB --nrUE --build-e2 --ninja
 ```
 
-#### Détails des options :
+#### Option Details:
 
-- `-I` : installe les dépendances nécessaires (à faire une seule fois ou après modification des prérequis).
-- `-w USRP` : active le support pour la tête radio **USRP**, via la bibliothèque `oai device`.
-- `--gNB` : construit l'exécutable **`nr-softmodem`** (gNB).
-- `--nrUE` : construit l'exécutable **`nr-uesoftmodem`** (UE).
-- `--build-e2` : compile et intègre l’agent **E2** au gNB.
-- `--ninja` : utilise **ninja** pour accélérer la compilation.
+- `-I`: Installs required dependencies (run once or after modifying prerequisites).
+- `-w USRP`: Enables support for the **USRP** radio head via the `oai device` library.
+- `--gNB`: Builds the **`nr-softmodem`** (gNB) executable.
+- `--nrUE`: Builds the **`nr-uesoftmodem`** (UE) executable.
+- `--build-e2`: Compiles and integrates the **E2 agent** into the gNB.
+- `--ninja`: Uses **ninja** to speed up the build process.
 
-> 🔧 Note : `liboai_device.so` est lié dynamiquement à `liboai_usrpdevif.so` (USRP) pour l'exécution.
+> 🔧 Note: `liboai_device.so` is dynamically linked to `liboai_usrpdevif.so` (USRP) during execution.
 
 ---
 
-### 🏗️ Arborescence et flexRIC
+### 🏗️ Directory Structure and flexRIC
 
-Après compilation :
+After compilation:
 
-- Un dossier `flexric` est généré automatiquement :
+- A `flexric` folder is automatically generated:
   ```
   gnbs/openair2/E2AP/flexric
   ```
 
-Des instructions complémentaires pour compiler les programmes supplémentaires de `flexric` sont disponibles dans la référence [31].
+Additional instructions for compiling `flexric` supplementary programs are available in reference [31].
 
 ---
 
-### 📝 Configuration du gNB
+### 📝 gNB Configuration
 
-Le fichier de configuration du gNB (`gnb.sa.band78.fr1.106PRB.usrpb210.conf`) doit être **cohérent avec les informations SIM** déjà configurées dans la base de données du réseau central (`oai_db.sql2`).
+The gNB configuration file (`gnb.sa.band78.fr1.106PRB.usrpb210.conf`) must be **consistent with the SIM information** already configured in the core network database (`oai_db.sql2`).
 
 ---
 
-### 🚀 Lancement des composants
+### 🚀 Component Startup
 
-#### Démarrage du gNB :
+#### Starting the gNB:
 
-Suivre les instructions de lancement fournies dans le dépôt GitLab principal :  
+Follow the launch instructions provided in the main GitLab repository:  
 👉 [OAI RAN GitLab](https://gitlab.eurecom.fr/oai/openairinterface5g)
 
-#### Lancement de near-RT RIC :
+#### Launching the near-RT RIC:
 
 ```bash
 cd flexric
@@ -145,15 +146,15 @@ cd flexric
 
 ---
 
-### 📨 RabbitMQ & xApp Python
+### 📨 RabbitMQ & Python xApp
 
-#### Démarrage de RabbitMQ :
+#### Starting RabbitMQ:
 
 ```bash
 docker-compose -f docker-compose/docker-compose-ran.yaml up -d rabbitmq
 ```
 
-#### Lancement du xApp Python (récupération des statistiques RAN) :
+#### Running the Python xApp (RAN statistics retrieval):
 
 ```bash
 python3 build/examples/xApp/python3/rnisxapp.py
@@ -161,57 +162,56 @@ python3 build/examples/xApp/python3/rnisxapp.py
 
 ---
 
-### ✅ Vérification via interface RabbitMQ
+### ✅ Verification via RabbitMQ Interface
 
-Accédez à l’interface web de gestion de RabbitMQ :
+Access the RabbitMQ management web interface:
 
 🔗 [http://192.168.70.166:15672/#/queues](http://192.168.70.166:15672/#/queues)
 
-**Identifiants :**
+**Credentials:**
 
-- **User** : `user`
-- **Password** : `password`
+- **User**: `user`
+- **Password**: `password`
 
-> La présence d’une file d’attente nommée `rnis_xapp` confirme que toutes les étapes précédentes ont été réalisées avec succès.
-
----
-
-### 📬 À propos de RabbitMQ
-
-RabbitMQ est un **middleware de messagerie** implémentant le protocole **AMQP (Advanced Message Queuing Protocol)**.  
-Il fonctionne sur un modèle "file d’attente", où les **producteurs** envoient des messages à une file, et les **consommateurs** les récupèrent de cette file.
+> The presence of a queue named `rnis_xapp` confirms that all the previous steps were successfully completed.
 
 ---
 
-**Références** :
+### 📬 About RabbitMQ
 
-- [30] OAI RAN GitLab : https://gitlab.eurecom.fr/oai/openairinterface5g  
-- [31] Documentation flexRIC : *https://gitlab.eurecom.fr/mosaic5g/flexric*
-
-
-## 1.2 Déploiement d’OAI-MEP
-
-Ce guide décrit le processus de déploiement de la plateforme **OAI-MEP** (OpenAirInterface MEC Platform), un composant essentiel de l’architecture MEC (Multi-access Edge Computing) dans l’environnement OAI.
+RabbitMQ is a **messaging middleware** implementing the **AMQP (Advanced Message Queuing Protocol)**.  
+It operates on a "queue" model, where **producers** send messages to a queue, and **consumers** retrieve them from the queue.
 
 ---
 
-### 🧱 Architecture OAI-MEP
+**References**:
 
-L’architecture d’OAI-MEP est composée des éléments suivants :
+- [30] OAI RAN GitLab: https://gitlab.eurecom.fr/oai/openairinterface5g  
+- [31] flexRIC Documentation: *https://gitlab.eurecom.fr/mosaic5g/flexric*
 
-- **OAI-MEP Gateway** : agit en tant que **point d’entrée**, redirigeant le trafic **MP1** vers les services MEC appropriés.
-- **Kong** : joue le rôle de **proxy inverse** permettant de router le trafic.
-- **DaRS (Discovery and Registration Service)** : cœur de la plateforme MEC, il expose une **API REST MP1** qui permet :
-  - `POST` : **enregistrement d’un service MEC**
-  - `GET` : **découverte de tous les services MEC**
-  - `GET` avec filtre : **découverte par type de service**
-  - `DELETE` : **suppression d’un service enregistré**
+## 1.2 Deployment of OAI-MEP
+
+This guide describes the deployment process of the **OAI-MEP** (OpenAirInterface MEC Platform), a key component of the MEC (Multi-access Edge Computing) architecture in the OAI environment.
 
 ---
 
-### 📦 Clonage du projet
+### 🧱 OAI-MEP Architecture
 
-Cloner le dépôt Git du projet :
+The OAI-MEP architecture is composed of the following elements:
+
+- **OAI-MEP Gateway**: Acts as an **entry point**, redirecting **MP1 traffic** to the appropriate MEC services.
+- **Kong**: Functions as a **reverse proxy** that routes traffic.
+- **DaRS (Discovery and Registration Service)**: The core of the MEC platform, it exposes an **MP1 REST API** that allows:
+  - `POST`: **Registering a MEC service**
+  - `GET`: **Discovering all MEC services**
+  - `GET` with filter: **Discovery by service type**
+  - `DELETE`: **Deleting a registered service**
+
+---
+
+### 📦 Cloning the Project
+
+Clone the Git repository of the project:
 
 ```bash
 git clone https://gitlab.eurecom.fr/oai/orchestration/oai-mec/oai-mep.git
@@ -220,9 +220,9 @@ cd oai-mep
 
 ---
 
-### 🚀 Déploiement avec Docker Compose
+### 🚀 Deployment with Docker Compose
 
-Utiliser la commande suivante pour lancer tous les services nécessaires :
+Use the following command to start all necessary services:
 
 ```bash
 docker-compose -f docker-compose/docker-compose-mep.yaml up -d
@@ -230,65 +230,64 @@ docker-compose -f docker-compose/docker-compose-mep.yaml up -d
 
 ---
 
-### ⚠️ Configuration du DNS ou `/etc/hosts`
+### ⚠️ DNS or `/etc/hosts` Configuration
 
-Pour assurer le bon fonctionnement du routage MP1 via Kong, il est **obligatoire de configurer le FQDN** `oai-mep.org` dans votre système.
+To ensure proper routing of MP1 traffic via Kong, it is **mandatory to configure the FQDN** `oai-mep.org` on your system.
 
-Ajouter la ligne suivante dans votre fichier `/etc/hosts` :
+Add the following line to your `/etc/hosts` file:
 
 ```bash
 192.168.70.2 oai-mep.org
 ```
 
-> ❗ Si cette configuration n’est pas faite, **OAI-MEP ne pourra pas router correctement le trafic MP1** vers les services MEC hébergés.
+> ❗ If this configuration is not set, **OAI-MEP will not be able to correctly route MP1 traffic** to the hosted MEC services.
 
 ---
 
-### 🌐 API MP1 – Fonctionnalités
+### 🌐 MP1 API – Features
 
-L'interface **MP1** exposée par **DaRS** permet l’interaction avec les services MEC :
+The **MP1** interface exposed by **DaRS** enables interaction with MEC services:
 
-| Méthode | Fonction                                        | Exemple d'utilisation          |
-|---------|-------------------------------------------------|--------------------------------|
-| POST    | Enregistrement d’un service MEC                 | `curl -X POST <url>`           |
-| GET     | Découverte de tous les services                 | `curl -X GET <url>`            |
-| GET     | Découverte filtrée par type                     | `curl -X GET <url>?type=xyz`   |
-| DELETE  | Suppression d’un service enregistré             | `curl -X DELETE <url>/<id>`    |
+| Method  | Function                                      | Usage Example                  |
+|---------|-----------------------------------------------|--------------------------------|
+| POST    | Register a MEC service                        | `curl -X POST <url>`           |
+| GET     | Discover all services                         | `curl -X GET <url>`            |
+| GET     | Filtered discovery by service type            | `curl -X GET <url>?type=xyz`   |
+| DELETE  | Delete a registered service                   | `curl -X DELETE <url>/<id>`    |
 
-> Vous pouvez tester ces appels via `curl`, Postman ou toute autre interface REST.
-
----
-
-### 📚 Référence
-
-- [27] GitLab OAI-MEP : [https://gitlab.eurecom.fr/oai/orchestration/oai-mec/oai-mep](https://gitlab.eurecom.fr/oai/orchestration/oai-mec/oai-mep)
+> These calls can be tested using `curl`, Postman, or any other REST interface.
 
 ---
 
-✅ Une fois le service lancé et le nom de domaine correctement configuré, la plateforme OAI-MEP est prête à accueillir et orchestrer vos services MEC via l’interface MP1.
+### 📚 Reference
 
-
-## 1.3 Déploiement d’OAI-RNIS
-
-OAI-RNIS (Radio Network Information Service) est un composant clé de l'architecture MEC, conçu pour fournir des **données radio spécifiques à un utilisateur**, en s’appuyant sur les spécifications **ETSI MEC GS 012** adaptées à une implémentation **5G Standalone (SA)**.
+- [27] OAI-MEP GitLab: [https://gitlab.eurecom.fr/oai/orchestration/oai-mec/oai-mep](https://gitlab.eurecom.fr/oai/orchestration/oai-mec/oai-mep)
 
 ---
 
-### 🧱 Architecture Fonctionnelle
+✅ Once the service is running and the domain name is properly configured, the OAI-MEP platform is ready to host and orchestrate your MEC services via the MP1 interface.
 
-OAI-RNIS repose sur plusieurs modules appelés **rnisApp** ou **rnisService**, dont les principaux rôles sont les suivants :
+## 1.3 Deployment of OAI-RNIS
 
-- **Northbound API** : Interface RESTful exposant les données RNIS.
-- **Data Convergence Service** : Fusionne les données provenant des sources mp2 (réseau 3GPP).
-- **Notification Service** : Envoie les événements RNIS aux services abonnés via HTTP.
-- **Core Network Wrapper Service** : Consomme les événements du cœur de réseau 5G via **OAI-CM**.
-- **KPIs-xApp Service** : Récupère les métriques radio depuis l’agent E2 de la xApp RAN.
+OAI-RNIS (Radio Network Information Service) is a key component of the MEC architecture, designed to provide **user-specific radio data**, based on **ETSI MEC GS 012** specifications adapted for a **5G Standalone (SA)** implementation.
 
 ---
 
-### 📦 Clonage du projet
+### 🧱 Functional Architecture
 
-Le projet OAI-RNIS peut être cloné avec la commande suivante :
+OAI-RNIS is composed of several modules, referred to as **rnisApp** or **rnisService**, with the following main roles:
+
+- **Northbound API**: RESTful interface exposing RNIS data.
+- **Data Convergence Service**: Aggregates data from mp2 sources (3GPP network).
+- **Notification Service**: Sends RNIS events to subscribed services via HTTP.
+- **Core Network Wrapper Service**: Consumes 5G core events via **OAI-CM**.
+- **KPIs-xApp Service**: Retrieves radio metrics from the E2 agent of the RAN xApp.
+
+---
+
+### 📦 Cloning the Project
+
+The OAI-RNIS project can be cloned using the following command:
 
 ```bash
 git clone https://gitlab.eurecom.fr/oai/orchestration/oai-mec/oai-rnis.git
@@ -297,53 +296,53 @@ cd oai-rnis
 
 ---
 
-### 🚀 Fonctionnement et Intégration
+### 🚀 Operation and Integration
 
-- RNIS extrait les données du réseau 3GPP via l’interface **mp2**.
-- Ces données sont ensuite exposées via l’interface **mp1**.
-- Au démarrage, **OAI-RNIS enregistre automatiquement** son service auprès de **OAI-MEP** via un appel `POST` mp1.
-
----
-
-### 📡 Modules Clés
-
-| Module                      | Fonction                                                                 |
-|----------------------------|--------------------------------------------------------------------------|
-| Core Network Wrapper       | Récupère les événements 5G exposés par OAI-CM                            |
-| KPIs-xApp Service          | Collecte les statistiques RAN via xApp (ex : `rnis-xApp`)                |
-| Data Convergence Service   | Agrège les informations collectées et déclenche les événements RNIS     |
-| Notification Service       | Envoie les données aux abonnés par HTTP                                 |
-| Northbound API             | Expose les informations RNIS en REST via mp1                            |
-
-> ⚙️ L’architecture est **évolutive** en fonction du nombre de nœuds ou d’applications MEC à interfacer.
+- RNIS extracts data from the 3GPP network via the **mp2 interface**.
+- These data are then exposed through the **mp1 interface**.
+- On startup, **OAI-RNIS automatically registers** its service with **OAI-MEP** via a `POST` mp1 call.
 
 ---
 
-### 📊 Récupération des KPIs
+### 📡 Key Modules
 
-Deux méthodes permettent à une application MEC d’accéder aux KPIs via MP1 :
+| Module                    | Function                                                                 |
+|--------------------------|--------------------------------------------------------------------------|
+| Core Network Wrapper      | Retrieves 5G events exposed by OAI-CM                                   |
+| KPIs-xApp Service         | Collects RAN statistics via xApp (e.g., `rnis-xApp`)                    |
+| Data Convergence Service  | Aggregates collected data and triggers RNIS events                      |
+| Notification Service      | Sends data to subscribers via HTTP                                      |
+| Northbound API            | Exposes RNIS data via REST using mp1                                    |
 
-#### ✅ Méthode 1 : Requête GET directe
+> ⚙️ The architecture is **scalable** depending on the number of MEC nodes or applications to be integrated.
 
-Utiliser la commande suivante :
+---
+
+### 📊 Retrieving KPIs
+
+Two methods allow a MEC application to access KPIs via MP1:
+
+#### ✅ Method 1: Direct GET request
+
+Use the following command:
 
 ```bash
 curl -X 'GET' 'http://oai-mep.org/rnis/v2/queries/layer2_meas' -H 'accept: application/json'
 ```
 
-#### 📥 Méthode 2 : Souscription avec envoi automatique des KPIs
+#### 📥 Method 2: Subscription with automatic KPI delivery
 
-Une **application MEC** écrite avec **Python Flask** est fournie pour consommer automatiquement les KPIs :
+A sample **MEC application** written in **Python Flask** is provided to automatically consume KPIs:
 
 ```bash
 python3 examples/example-mec-app.py
 ```
 
-> ⚠️ Il est **nécessaire de démarrer un UE (User Equipment)** pour obtenir des données KPI valides.
+> ⚠️ You **must start a UE (User Equipment)** to obtain valid KPI data.
 
-Les KPIs peuvent ensuite être :
-- Consultés via le **dashboard web de l’application MEC**.
-- Ou récupérés manuellement par GET :
+KPIs can then be:
+- Viewed through the **MEC app’s web dashboard**.
+- Or manually retrieved using GET:
 
 ```bash
 curl -X 'GET' 'http://oai-mep.org/rnis/v2/queries/layer2_meas' -H 'accept: application/json'
@@ -351,19 +350,19 @@ curl -X 'GET' 'http://oai-mep.org/rnis/v2/queries/layer2_meas' -H 'accept: appli
 
 ---
 
-### 🌐 Interfaces RNIS
+### 🌐 RNIS Interfaces
 
-| Interface | Description                                                 |
-|-----------|-------------------------------------------------------------|
-| mp1       | Interface RESTful pour les consommateurs MEC                |
-| mp2       | Interface d’intégration vers le réseau 3GPP (via OAI-CM / RAN) |
-
----
-
-### 📚 Référence
-
-- [32] GitLab OAI-RNIS : https://gitlab.eurecom.fr/oai/orchestration/oai-mec/oai-rnis
+| Interface | Description                                                     |
+|-----------|-----------------------------------------------------------------|
+| mp1       | RESTful interface for MEC consumers                             |
+| mp2       | Integration interface towards the 3GPP network (via OAI-CM/RAN) |
 
 ---
 
-✅ Une fois lancé, OAI-RNIS devient une brique MEC essentielle pour fournir des **indicateurs radio précis** à des applications de périphérie dynamiques et intelligentes.
+### 📚 Reference
+
+- [32] GitLab OAI-RNIS: https://gitlab.eurecom.fr/oai/orchestration/oai-mec/oai-rnis
+
+---
+
+✅ Once launched, OAI-RNIS becomes a critical MEC component for delivering **precise radio indicators** to dynamic, intelligent edge applications.
