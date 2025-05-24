@@ -69,7 +69,7 @@ These northbound endpoints allow third-party components (such as RNIS, a MEC orc
 > ⚠️ As of today, the OAI-CM repository is in its early development stage and only supports subscriptions to events from the OAI AMF and SMF.
 
 ### References:
-- Source code and detailed information are available on the OAI GitLab: [https://gitlab.eurecom.fr/oai](https://gitlab.eurecom.fr/oai) (see the `oai-cn5g-smf` or `oai-cn5g-amf` repositories, depending on recent updates).
+- Source code and detailed information are available on the OAI GitLab: [https://gitlab.eurecom.fr/oai/orchestration/blueprints](https://gitlab.eurecom.fr/oai/orchestration/blueprints) (see the `oai-cn5g-smf` or `oai-cn5g-amf` repositories, depending on recent updates).
 
 ## 1.1.3 Deployment of RAN Components
 
