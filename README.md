@@ -120,7 +120,7 @@ After compilation:
   gnbs/openair2/E2AP/flexric
   ```
 
-Additional instructions for compiling `flexric` supplementary programs are available in reference [31].
+Additional instructions for compiling `flexric` supplementary programs are available in reference [31](https://gitlab.eurecom.fr/mosaic5g/flexric).
 
 ---
 
