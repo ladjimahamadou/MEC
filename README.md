@@ -1,5 +1,6 @@
 # MEC
-This repository provides a step-by-step guide for implementing OAI-MEC in a 5G network.
+This repository provides a step-by-step guide for implementing OAI-MEC in a 5G network. The configuration files and code modifications will be made publicly available upon the publication of our article submitted to ICRAMI.
+For more information, please contact: diawara.mahamadou@ugb.edu.sn
 
 # 📡 Deployment of 5G-MEC with OpenAirInterface (OAI)
 
